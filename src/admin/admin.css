@@ -11,6 +11,7 @@ body.admin-page { height: auto; min-height: 100dvh; overflow: auto; background: 
 .admin-brand b { font-size: 25px; letter-spacing: -.8px; line-height: 1.1; }
 .admin-brand b > span { color: var(--gold); }
 .admin-brand small { color: var(--muted); font-size: 10px; font-weight: 600; }
+.admin-brand .university-label { display: block; color: var(--text); font-size: 12px; line-height: 1.25; }
 .admin-header-actions { display: flex; align-items: center; gap: 12px; }
 .admin-map-link { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 8px 12px; font-size: 12px; font-weight: 600; }
 .admin-map-link .ui-icon { width: 17px; transform: rotate(180deg); }
@@ -98,6 +99,7 @@ body.admin-page { height: auto; min-height: 100dvh; overflow: auto; background: 
   .admin-editor-heading { align-items: start; flex-direction: column; }
 }
 @media(max-width: 650px){
+  .admin-brand .university-label { font-size: 10px; }
   .admin-label-preview { grid-template-columns: 1fr; }
   .admin-header { min-height: 92px; }
   .admin-brand small { display: none; }

@@ -38,7 +38,8 @@
     "Optimistic revisions and duplicate-number validation",
     "Student map, search and picked endpoints refresh after admin edits",
     "Corrected corpus A to seven floors and corpus B to five floors plus basement in RU/KZ, search, admin and API",
-    "English map, directions, search, loading/errors, saved language and admin UI with optional persistent English room names"
+    "English map, directions, search, loading/errors, saved language and admin UI with optional persistent English room names",
+    "University name in map and admin headers follows RU/KZ/EN and remains visible on narrow screens"
   ],
   "dataChanged": false,
   "browserLayoutVerified": false,
@@ -86,10 +87,10 @@
   },
   "productionBuild": {
     "passed": true,
-    "javascriptBytes": 276933,
-    "javascriptGzipBytes": 86868,
-    "adminJavascriptBytes": 31759,
-    "adminJavascriptGzipBytes": 10179,
+    "javascriptBytes": 277200,
+    "javascriptGzipBytes": 86919,
+    "adminJavascriptBytes": 31812,
+    "adminJavascriptGzipBytes": 10213,
     "adminLazyLoaded": true,
     "sizesApproximate": true
   },
@@ -132,5 +133,16 @@
     "kk",
     "ru",
     "en"
-  ]
+  ],
+  "latestFrontendValidation": {
+    "existingTestsPassed": 26,
+    "failed": 0,
+    "staticReactBrandRendersVerified": 6,
+    "browserLayoutVerified": false,
+    "brandNames": {
+      "ru": "ХДУ Университет",
+      "kk": "ХДУ Университеті",
+      "en": "HDU University"
+    }
+  }
 }
