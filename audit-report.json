@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-21",
+  "date": "2026-11-03",
   "stack": {
     "react": "19.3.1",
     "react-dom": "19.3.1",
@@ -15,7 +15,7 @@
     "floors": 13,
     "command": "pnpm test",
     "status": "passed",
-    "passed": 97,
+    "passed": 99,
     "failed": 0,
     "mapCanvasEventChecks": 20
   },
@@ -36,7 +36,8 @@
     "SQLite schema 1 to 2 migration, credentials and room change history",
     "Cookie sessions, CSRF and origin validation, bounded password authentication",
     "Optimistic revisions and duplicate-number validation",
-    "Student map, search and picked endpoints refresh after admin edits"
+    "Student map, search and picked endpoints refresh after admin edits",
+    "Corrected corpus A to seven floors and corpus B to five floors plus basement in RU/KZ, search, admin and API"
   ],
   "dataChanged": false,
   "browserLayoutVerified": false,
@@ -78,10 +79,10 @@
   },
   "productionBuild": {
     "passed": true,
-    "javascriptBytes": 272270,
-    "javascriptGzipBytes": 86330,
-    "adminJavascriptBytes": 27320,
-    "adminJavascriptGzipBytes": 8850,
+    "javascriptBytes": 272290,
+    "javascriptGzipBytes": 86340,
+    "adminJavascriptBytes": 27300,
+    "adminJavascriptGzipBytes": 8870,
     "adminLazyLoaded": true,
     "sizesApproximate": true
   },
@@ -90,17 +91,32 @@
     "base": "http://127.0.0.1:8765",
     "storage": "sqlite",
     "search305Floor": 3,
-    "routeFloors": [1, 2, 3],
+    "routeFloors": [
+      1,
+      2,
+      3
+    ],
     "builtAssetsServed": true,
     "databaseAndSourceFilesNotServed": true,
     "adminPageStatus": 200,
     "adminAssetsServed": true,
     "unauthenticatedWriteStatus": 401,
-    "initialAdminSetupReady": true,
+    "initialAdminSetupReady": false,
     "liveSchemaVersion": 2,
     "liveRoomMetadataEdited": false,
-    "unchangedLiveRevision": "f47cd3da69224a86a57037d827d3449ca099a6069b2373ee4865d7692724b954"
+    "unchangedLiveRevision": "f47cd3da69224a86a57037d827d3449ca099a6069b2373ee4865d7692724b954",
+    "adminConfigured": true,
+    "corpusASearch211Building": "seven",
+    "corpusBSearch305Building": "five",
+    "legacyDatabaseLabelsCorrected": true,
+    "existingRoomAndAdminDataPreserved": true
   },
   "loadTested": false,
-  "onsiteVerified": false
+  "onsiteVerified": false,
+  "buildingLabelsChanged": true,
+  "roomGeometryChanged": false,
+  "buildingMapping": {
+    "A": "seven",
+    "B": "five"
+  }
 }

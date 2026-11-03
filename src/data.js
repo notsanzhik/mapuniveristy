@@ -53,16 +53,16 @@ const revisedFloors={};for(const [old,d] of Object.entries(MAPS.five.floors)){co
 const basementNumbers={2:'01А',3:'03',4:'05',5:'07',7:'08',10:'06А',11:'06Б',12:'04',14:'02А'};for(const r of MAPS.five.floors[0].rooms){if(basementNumbers[r.id])r.number=basementNumbers[r.id];}
 // Чётко различимые подписи первого надземного этажа.
 for(const [id,n] of [[7,'109'],[9,'110'],[10,'106'],[13,'104']]){const r=MAPS.five.floors[1].rooms.find(r=>r.id===id);if(r)r.number=n;}
-// Б корпус: этажи 1–7 сохранены по подтверждению пользователя.
+// А корпус: этажи 1–7 сохранены по подтверждению пользователя.
 const SEVEN_AREAS={2:[14.8,83.4,18.8,14.5,50.4,50.4,24.6,50.8,50.4],3:[14.8,83.3,18.7,15.1,50,70.9,28.7,70.9,50.4],4:[14.8,83.4,19,14.6,49.7,70.9,28.1,70.9,49.7],5:[14.8,84.1,19,14.6,49.7,70.9,28.3,70.9,50.1],6:[14.8,84.1,19,14.6,49.7,70.9,28.3,70.9,50.4]};
 const SEVEN_NUMBERS={2:{5:'117А',9:'110А'},3:{5:'211',6:'213',8:'214',9:'212'},4:{5:'315',6:'317',8:'322',9:'320'},5:{5:'415',6:'417',7:'418',8:'416',9:'414'},6:{5:'513',6:'515',7:'520',8:'518',9:'516'}};
 for(const [f,d] of Object.entries(MAPS.seven.floors)){d.explanationPage=+f===1?6:d.sourcePage;for(const r of d.rooms){if(SEVEN_AREAS[f])r.area=SEVEN_AREAS[f][r.id-1];if(SEVEN_NUMBERS[f]?.[r.id])r.number=SEVEN_NUMBERS[f][r.id];}}
-MAPS.seven.name=MAPS.seven.short='Б корпус';MAPS.seven.caption='7 этажей';MAPS.five.name=MAPS.five.short='А корпус';MAPS.five.caption='5 этажей + подвал';
+MAPS.seven.name=MAPS.seven.short='А корпус';MAPS.seven.caption='7 этажей';MAPS.five.name=MAPS.five.short='Б корпус';MAPS.five.caption='5 этажей + подвал';
 MAPS.seven.floors[4].rooms.find(r=>r.id===7).number='319';
 
-// Читаемые номера кабинетов А корпуса с планов, страницы 17, 19 и 21.
+// Читаемые номера кабинетов Б корпуса с планов, страницы 17, 19 и 21.
 // Номера экспликации не используются как номера кабинетов.
-const A_CABINET_NUMBERS={3:{5:'305',6:'307',7:'309',10:'316',11:'314',13:'312',14:'310',15:'308'},4:{2:'401',4:'403',5:'405',8:'407',10:'411',11:'410',13:'408',14:'406',15:'404',17:'402'},5:{2:'501',4:'503',8:'507',10:'509',11:'512',13:'510',14:'508',16:'504',18:'502'}};
-for(const [f,nums] of Object.entries(A_CABINET_NUMBERS))for(const r of MAPS.five.floors[f].rooms)if(nums[r.id])r.number=nums[r.id];
+const FIVE_CABINET_NUMBERS={3:{5:'305',6:'307',7:'309',10:'316',11:'314',13:'312',14:'310',15:'308'},4:{2:'401',4:'403',5:'405',8:'407',10:'411',11:'410',13:'408',14:'406',15:'404',17:'402'},5:{2:'501',4:'503',8:'507',10:'509',11:'512',13:'510',14:'508',16:'504',18:'502'}};
+for(const [f,nums] of Object.entries(FIVE_CABINET_NUMBERS))for(const r of MAPS.five.floors[f].rooms)if(nums[r.id])r.number=nums[r.id];
 
 export default MAPS;

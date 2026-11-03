@@ -53,15 +53,36 @@ test('building metadata, HEAD, ETags and conditional floor requests follow HTTP 
   const buildings=await request('/api/v1/buildings');
   assert.equal(buildings.response.status,200);assert.equal(buildings.body.data.length,2);
   const five=buildings.body.data.find(building=>building.id==='five');
-  assert.deepEqual(five.floors,[0,1,2,3,4,5]);assert.deepEqual(five.name,{ru:'А корпус',kk:'А корпусы'});
+  assert.deepEqual(five.floors,[0,1,2,3,4,5]);assert.deepEqual(five.name,{ru:'Б корпус',kk:'Б корпусы'});
+  assert.equal(five.code,'B');
   const seven=buildings.body.data.find(building=>building.id==='seven');
   assert.deepEqual(seven.floors,[1,2,3,4,5,6,7]);
+  assert.equal(seven.code,'A');assert.deepEqual(seven.name,{ru:'А корпус',kk:'А корпусы'});
   const first=await request('/api/v1/buildings/seven/floors/7');
   const etag=first.response.headers.get('etag');
   const cached=await request('/api/v1/buildings/seven/floors/7',{headers:{'If-None-Match':`W/${etag}`}});
   assert.equal(cached.response.status,304);assert.equal(cached.text,'');
   const head=await request('/api/v1/maps',{method:'HEAD'});
   assert.equal(head.response.status,200);assert.equal(head.text,'');assert.ok(Number(head.response.headers.get('content-length'))>0);
+});
+
+test('existing databases with former corpus labels expose corrected names without rewriting stored rooms',async()=>{
+  const stored=structuredClone(seed);
+  stored.five.name=stored.five.short='А корпус';
+  stored.seven.name=stored.seven.short='Б корпус';
+  const snapshot=JSON.stringify(stored);
+  const existing=await start({getMaps:()=>stored,getRevision:()=>revision});
+  try{
+    const response=await fetch(existing.url+'/api/v1/maps');
+    assert.equal(response.status,200);
+    const {data}=await response.json();
+    assert.equal(data.seven.name,'А корпус');assert.equal(data.seven.short,'А корпус');
+    assert.equal(data.five.name,'Б корпус');assert.equal(data.five.short,'Б корпус');
+    assert.equal(buildCatalog(data).length,170);
+    assert.deepEqual(data.five.floors,sanitizeMaps(seed).five.floors);
+    assert.deepEqual(data.seven.floors,sanitizeMaps(seed).seven.floors);
+    assert.equal(JSON.stringify(stored),snapshot);
+  }finally{existing.instance.closeIdleConnections();await new Promise(resolve=>existing.instance.close(resolve));}
 });
 
 test('global bilingual search ranks context without filtering other floors or corpora',async()=>{

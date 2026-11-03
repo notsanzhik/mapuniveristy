@@ -47,8 +47,8 @@ test('all actual room types have Kazakh labels and search accepts either languag
     assert.deepEqual(search(russian), search(kazakh), `${russian}/${kazakh}`);
     assert.ok(search(kazakh).length);
   }
-  assert.equal(I18N.ru.five, 'А корпус'); assert.equal(I18N.kk.five, 'А корпусы');
-  assert.equal(I18N.ru.seven, 'Б корпус'); assert.equal(I18N.kk.seven, 'Б корпусы');
+  assert.equal(I18N.ru.five, 'Б корпус'); assert.equal(I18N.kk.five, 'Б корпусы');
+  assert.equal(I18N.ru.seven, 'А корпус'); assert.equal(I18N.kk.seven, 'А корпусы');
   assert.equal(I18N.ru.basement, 'Подвал'); assert.equal(I18N.kk.basement, 'Жертөле');
 });
 

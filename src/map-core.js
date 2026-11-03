@@ -13,7 +13,7 @@ export function searchRooms(query, { catalog = [], building, floor } = {}, route
   const q = normalize(query);
   let list = catalog.filter(room => !routeOnly || !room.partial);
   const corpus = q.match(/(?:^|\s)(?:([аб])\s*корпус(?:ы)?|корпус(?:ы)?\s*([аб]))(?=\s|$)/);
-  if (corpus) list = list.filter(room => room.building === ((corpus[1] || corpus[2]) === 'а' ? 'five' : 'seven'));
+  if (corpus) list = list.filter(room => room.building === ((corpus[1] || corpus[2]) === 'а' ? 'seven' : 'five'));
   const basement = /подвал|жертөле/.test(q);
   const floorMatch = q.match(/(\d+)\s*[- ]?(?:этаж|эт\.?|қабат)/);
   if (basement) list = list.filter(room => room.floor === 0);

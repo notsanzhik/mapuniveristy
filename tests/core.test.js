@@ -24,7 +24,7 @@ test('Russian and Kazakh searches work independently of the interface locale', (
 });
 
 test('corpus prefixes, basement, floors, leading zeroes and suffixes stay distinguishable', () => {
-  for (const query of ['А корпус 01А', 'корпус А 01A', 'А корпусы 01А']) {
+  for (const query of ['Б корпус 01А', 'корпус Б 01A', 'Б корпусы 01А', 'B корпус 01A']) {
     const matches = search(query);
     assert.ok(matches.length, query);
     assert.ok(matches.every(room => room.building === 'five' && room.number === '01А'), query);
@@ -35,7 +35,13 @@ test('corpus prefixes, basement, floors, leading zeroes and suffixes stay distin
   for (const query of ['2 этаж', '2-қабат']) {
     const matches = search(query); assert.ok(matches.length); assert.ok(matches.every(room => room.floor === 2));
   }
-  assert.ok(search('корпусы Б баспалдақ').every(room => room.building === 'seven' && room.type === 'stair'));
+  for (const query of ['А корпус 211','A корпус 211','корпус А 211','А корпусы 211']) {
+    const matches=search(query);
+    assert.ok(matches.length,query);
+    assert.ok(matches.every(room=>room.building==='seven'&&room.number==='211'),query);
+  }
+  const stairs=search('корпусы А баспалдақ');
+  assert.ok(stairs.length);assert.ok(stairs.every(room => room.building === 'seven' && room.type === 'stair'));
 });
 
 test('technical search remains explicit, route points exclude partial plans, and search is pure', () => {

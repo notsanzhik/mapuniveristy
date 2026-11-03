@@ -80,7 +80,7 @@ test('React application supports student search and route workflows', async t =>
         }
         assert.fail(`Timed out waiting for ${description}. UI: ${document.body.textContent.slice(0,400)}`);
       };
-      const corpusButton=building=>[...document.querySelectorAll('#buildings .corpus-button')][building==='five'?0:1];
+      const corpusButton=building=>document.querySelector(`#buildings [data-building="${building}"]`);
       let closed=false;
       const close=async()=>{
         if(closed)return;closed=true;
@@ -100,7 +100,7 @@ test('React application supports student search and route workflows', async t =>
     }
     async function withApp(query,scenario){const app=await mount(query);try{await scenario(app);}finally{await app.close();}}
 
-    await t.test('Russian A-corpus first floor renders usable controls from HTTP without original scans or areas',async()=>{
+    await t.test('Russian B-corpus first floor renders usable controls from HTTP without original scans or areas',async()=>{
       const app = await mount(undefined,{holdBootstrap:true});
       try {
       assert.equal(app.loadingSeen,true);
@@ -140,7 +140,7 @@ test('React application supports student search and route workflows', async t =>
       assert.equal(app.$('#planner').hidden,false);
       assert.equal(app.$('#roomCard'),null);
       assert.ok(app.$('#routeFrom').value);
-      assert.match(app.$('#routeFrom-meta').textContent,/А корпус.*1 этаж/);
+      assert.match(app.$('#routeFrom-meta').textContent,/Б корпус.*1 этаж/);
       await app.click(`#drawing [data-room="${nearby.id}"]`);
       await app.click('#chooseTo');
       assert.ok(app.$('#routeTo').value);
@@ -164,7 +164,10 @@ test('React application supports student search and route workflows', async t =>
       assert.equal(app.stored.get('hdu-language'),'kk');
     }));
 
-    await t.test('corpus and floor controls preserve A basement–5 and B 1–7 mappings',()=>withApp(undefined,async app=>{
+    await t.test('corpus and floor controls preserve A 1–7 and B basement–5 mappings',()=>withApp(undefined,async app=>{
+      assert.deepEqual([...app.document.querySelectorAll('#buildings .corpus-button b')].map(button=>button.textContent),['А корпус','Б корпус']);
+      assert.equal(app.corpusButton('seven').textContent,'А корпус');
+      assert.equal(app.corpusButton('five').textContent,'Б корпус');
       await app.click('#floors button[aria-label="Подвал"]');
       assert.equal(app.$('.map-heading h1').textContent,'Подвал');
       assert.match(app.location.search,/floor=0/);

@@ -63,6 +63,19 @@ test('admin React UI supports protected editing and preserves user drafts',async
       await waitFor(()=>authenticated?!!$('[data-admin-room="1"]'):!!$('#adminAuthForm'));
       return {window,document,location,$,stored,requests,roomStore,click,type,submit,waitFor,update,setConfirm(value){confirmResult=value;},async close(){await act(async()=>root.unmount());for(const [key,value]of saved){if(value)Object.defineProperty(globalThis,key,value);else delete globalThis[key];}}};
     }
+    await t.test('corpus A selects seven floors and corpus B selects the basement and five floors',async()=>{
+      const app=await mount();
+      try{
+        assert.deepEqual([...app.document.querySelectorAll('.admin-corpora button')].map(button=>button.textContent),['А корпус','Б корпус']);
+        assert.equal(app.$('.admin-corpora [data-building="five"]').getAttribute('aria-pressed'),'true');
+        await app.click('.admin-corpora [data-building="seven"]');
+        assert.equal(app.$('.admin-corpora [data-building="seven"]').getAttribute('aria-pressed'),'true');
+        assert.deepEqual([...app.document.querySelectorAll('#adminFloor option')].map(option=>option.getAttribute('value')),['1','2','3','4','5','6','7']);
+        await app.click('.admin-corpora [data-building="five"]');
+        assert.deepEqual([...app.document.querySelectorAll('#adminFloor option')].map(option=>option.getAttribute('value')),['0','1','2','3','4','5']);
+        assert.match(app.$('#adminFloor').textContent,/Подвал/);
+      }finally{await app.close();}
+    });
     await t.test('first setup uses chosen password, clears it after authentication, and displays all editable labels',async()=>{
       const app=await mount({authenticated:false,configured:false});
       try{

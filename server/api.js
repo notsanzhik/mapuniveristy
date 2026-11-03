@@ -6,8 +6,8 @@ const BODY_LIMIT = 8 * 1024;
 const ROOM_FIELDS = ['id','number','label','labelRu','labelKk','type','x','y','w','h','cx','cy','points','start','door','partial'];
 const FLOOR_FIELDS = ['view','spineX','spineY','wide','partialAnnex'];
 const BUILDING_NAMES = {
-  five: { code:'A', name:{ru:'А корпус',kk:'А корпусы'} },
-  seven: { code:'B', name:{ru:'Б корпус',kk:'Б корпусы'} },
+  five: { code:'B', name:{ru:'Б корпус',kk:'Б корпусы'} },
+  seven: { code:'A', name:{ru:'А корпус',kk:'А корпусы'} },
 };
 
 class ApiError extends Error {
@@ -25,6 +25,8 @@ const publicPoint = point => ({...publicRoom(point),building:point.building,floo
 export function sanitizeMaps(maps) {
   return Object.fromEntries(Object.entries(maps).map(([id,map])=>[id,{
     ...copyFields(map,['name','short']),
+    // Labels belong to the building identity, including databases seeded before the correction.
+    ...(BUILDING_NAMES[id] ? {name:BUILDING_NAMES[id].name.ru,short:BUILDING_NAMES[id].name.ru} : {}),
     floors:Object.fromEntries(Object.entries(map.floors).map(([floor,data])=>[floor,publicFloor(data)])),
   }]));
 }
