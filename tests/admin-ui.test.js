@@ -16,7 +16,7 @@ const initialRooms=[
 test('admin React UI supports protected editing and preserves user drafts',async t=>{
   const vite=await createServer({root:project,server:{middlewareMode:true,hmr:false,ws:false},appType:'custom',logLevel:'error'});
   try{
-    const {default:AdminApp}=await vite.ssrLoadModule('/src/admin/AdminApp.jsx');
+    const {default:AdminApp,ADMIN_I18N}=await vite.ssrLoadModule('/src/admin/AdminApp.jsx');
     async function mount({authenticated=true,configured=true,conflict=false,expirePatch=false,lang='ru'}={}){
       const {window,document}=parseHTML('<html><head><meta name="theme-color" content="#fff"></head><body class="light"><div id="root"></div></body></html>');
       document.oninput=null;
@@ -41,8 +41,8 @@ test('admin React UI supports protected editing and preserves user drafts',async
           if(conflict)return answer('REVISION_CONFLICT',409);
           const room=roomStore.find(room=>room.id===Number(url.pathname.split('/').at(-1)));
           const before={number:room.number??'',labelRu:room.labelRu,labelKk:room.labelKk};
-          Object.assign(room,{number:body.number,label:body.labelRu,labelRu:body.labelRu,labelKk:body.labelKk});
-          changes.unshift({id:1,before,after:{number:body.number,labelRu:body.labelRu,labelKk:body.labelKk},createdAt:'2026-10-21T08:00:00Z'});
+          Object.assign(room,{number:body.number,label:body.labelRu,labelRu:body.labelRu,labelKk:body.labelKk,labelEn:body.labelEn});
+          changes.unshift({id:1,before,after:{number:body.number,labelRu:body.labelRu,labelKk:body.labelKk,labelEn:body.labelEn},createdAt:'2026-10-21T08:00:00Z'});
           currentRevision=updatedRevision;return answer(room);
         }
         return answer('NOT_FOUND',404);
@@ -63,6 +63,33 @@ test('admin React UI supports protected editing and preserves user drafts',async
       await waitFor(()=>authenticated?!!$('[data-admin-room="1"]'):!!$('#adminAuthForm'));
       return {window,document,location,$,stored,requests,roomStore,click,type,submit,waitFor,update,setConfirm(value){confirmResult=value;},async close(){await act(async()=>root.unmount());for(const [key,value]of saved){if(value)Object.defineProperty(globalThis,key,value);else delete globalThis[key];}}};
     }
+    await t.test('all admin messages have English and match the Russian and Kazakh keys',()=>{
+      const keys=Object.keys(ADMIN_I18N.ru).sort();
+      assert.deepEqual(Object.keys(ADMIN_I18N.en).sort(),keys);
+      assert.deepEqual(Object.keys(ADMIN_I18N.kk).sort(),keys);
+      for(const key of keys)assert.ok(ADMIN_I18N.en[key].trim(),key);
+    });
+    await t.test('English admin saves a custom English name and preserves it when switching languages',async()=>{
+      const app=await mount({lang:'en'});
+      try{
+        assert.equal(app.document.documentElement.lang,'en');
+        assert.match(app.document.body.textContent,/Rooms and names/);
+        assert.deepEqual([...app.document.querySelectorAll('.admin-corpora button')].map(button=>button.textContent),['Building A','Building B']);
+        assert.deepEqual([...app.document.querySelectorAll('.language-switch button')].map(button=>button.textContent),['ҚАЗ','РУС','ENG']);
+        await app.click('[data-admin-room="1"]');
+        await app.type('#adminLabelEn','Computer science laboratory');
+        await app.click('.language-switch button[lang="kk"]');
+        assert.equal(app.$('#adminLabelEn').value,'Computer science laboratory');
+        await app.click('.language-switch button[lang="en"]');
+        await app.submit('#adminEditForm');await app.waitFor(()=>app.$('#adminSuccess'));
+        assert.match(app.$('#adminSuccess').textContent,/Changes saved/);
+        const patch=app.requests.find(item=>item.options.method==='PATCH');
+        assert.equal(JSON.parse(patch.options.body).labelEn,'Computer science laboratory');
+        await app.waitFor(()=>app.$('.admin-history [lang="en"]'));
+        assert.match(app.$('.admin-history').textContent,/Computer science laboratory/);
+        assert.equal(app.stored.get('hdu-language'),'en');
+      }finally{await app.close();}
+    });
     await t.test('corpus A selects seven floors and corpus B selects the basement and five floors',async()=>{
       const app=await mount();
       try{
@@ -102,7 +129,7 @@ test('admin React UI supports protected editing and preserves user drafts',async
         await app.type('#adminRoomNumber','06Б');await app.type('#adminLabelRu','Кабинет информатики');await app.type('#adminLabelKk','Информатика кабинеті');
         await app.submit('#adminEditForm');await app.waitFor(()=>app.$('#adminSuccess'));
         const patch=app.requests.find(item=>item.options.method==='PATCH');assert.ok(patch);
-        assert.deepEqual(JSON.parse(patch.options.body),{number:'06Б',labelRu:'Кабинет информатики',labelKk:'Информатика кабинеті',revision});
+        assert.deepEqual(JSON.parse(patch.options.body),{number:'06Б',labelRu:'Кабинет информатики',labelKk:'Информатика кабинеті',labelEn:'',revision});
         assert.equal(app.stored.get('hdu-map-revision'),updatedRevision);assert.equal(notified,1);
         assert.equal(app.$('#adminSave').disabled,true);
         await app.waitFor(()=>app.$('.admin-history time'));

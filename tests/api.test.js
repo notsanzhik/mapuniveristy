@@ -53,11 +53,11 @@ test('building metadata, HEAD, ETags and conditional floor requests follow HTTP 
   const buildings=await request('/api/v1/buildings');
   assert.equal(buildings.response.status,200);assert.equal(buildings.body.data.length,2);
   const five=buildings.body.data.find(building=>building.id==='five');
-  assert.deepEqual(five.floors,[0,1,2,3,4,5]);assert.deepEqual(five.name,{ru:'Б корпус',kk:'Б корпусы'});
+  assert.deepEqual(five.floors,[0,1,2,3,4,5]);assert.deepEqual(five.name,{ru:'Б корпус',kk:'Б корпусы',en:'Building B'});
   assert.equal(five.code,'B');
   const seven=buildings.body.data.find(building=>building.id==='seven');
   assert.deepEqual(seven.floors,[1,2,3,4,5,6,7]);
-  assert.equal(seven.code,'A');assert.deepEqual(seven.name,{ru:'А корпус',kk:'А корпусы'});
+  assert.equal(seven.code,'A');assert.deepEqual(seven.name,{ru:'А корпус',kk:'А корпусы',en:'Building A'});
   const first=await request('/api/v1/buildings/seven/floors/7');
   const etag=first.response.headers.get('etag');
   const cached=await request('/api/v1/buildings/seven/floors/7',{headers:{'If-None-Match':`W/${etag}`}});

@@ -1,7 +1,7 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { buildCatalog, searchRooms } from '../src/map-core.js';
-import { ROOM_KK } from '../src/i18n.js';
+import { ROOM_KK, ROOM_EN } from '../src/i18n.js';
 
 const scrypt = promisify(scryptCallback);
 const PREFIX = '/api/v1/admin';
@@ -9,7 +9,7 @@ const COOKIE = 'hdu_admin_session';
 const SESSION_MS = 8 * 60 * 60 * 1000;
 const AUTH_WINDOW_MS = 10 * 60 * 1000;
 const BODY_LIMIT = 8192;
-const ROOM_FIELDS = ['id','number','label','labelRu','labelKk','type','x','y','w','h','cx','cy','points','start','door','partial'];
+const ROOM_FIELDS = ['id','number','label','labelRu','labelKk','labelEn','type','x','y','w','h','cx','cy','points','start','door','partial'];
 const own = (value, key) => value && Object.prototype.hasOwnProperty.call(value, key);
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 class AdminError extends Error {
@@ -30,8 +30,8 @@ function methods(req, res, allowed) {
 function params(searchParams, allowed) {
   for (const key of searchParams.keys()) if (!allowed.includes(key) || searchParams.getAll(key).length !== 1) fail(400,'INVALID_QUERY','Invalid query parameters.');
 }
-function fields(body, keys) {
-  if (!object(body) || Object.keys(body).length !== keys.length || keys.some(key => !own(body,key))) fail(400,'VALIDATION_ERROR','Invalid request fields.');
+function fields(body, keys, optional = []) {
+  if (!object(body) || Object.keys(body).some(key=>!keys.includes(key)&&!optional.includes(key)) || keys.some(key => !own(body,key))) fail(400,'VALIDATION_ERROR','Invalid request fields.');
 }
 function integer(value, minimum = 0) {
   if (!/^(?:0|[1-9]\d*)$/.test(value) || !Number.isSafeInteger(Number(value)) || Number(value) < minimum) fail(400,'VALIDATION_ERROR','Invalid room identifier.');
@@ -79,7 +79,7 @@ function localSetup(req) {
 }
 function publicPoint(point) {
   const data = Object.fromEntries(ROOM_FIELDS.filter(key => own(point,key) && point[key] !== undefined).map(key => [key,structuredClone(point[key])]));
-  return {...data,labelRu:point.labelRu || point.label,labelKk:point.labelKk || ROOM_KK[point.label] || '',building:point.building,floor:point.floor};
+  return {...data,labelRu:point.labelRu || point.label,labelKk:point.labelKk || ROOM_KK[point.label] || '',labelEn:point.labelEn || ROOM_EN[point.labelRu || point.label] || ROOM_EN[point.label] || '',building:point.building,floor:point.floor};
 }
 function passwordValue(body) {
   fields(body,['password']);
@@ -228,7 +228,7 @@ export function createAdminHandler({repository,logger,publicOrigin} = {}) {
       } else if (endpoint === 'edit') {
         requireSession(req,true);
         const point=pointIdentifiers(...roomMatch.slice(1)), body=await readJSON(req);
-        fields(body,['number','labelRu','labelKk','revision']);
+        fields(body,['number','labelRu','labelKk','revision'],['labelEn']);
         const result=repository.updateRoom({...point,...body});
         send(req,res,200,{data:publicPoint({...result.room,...point}),revision:result.revision});
       } else {

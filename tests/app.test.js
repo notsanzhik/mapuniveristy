@@ -17,11 +17,11 @@ test('React application supports student search and route workflows', async t =>
   const server = await createServer({root:project,server:{middlewareMode:true,hmr:false,ws:false},appType:'custom',logLevel:'error'});
   try {
     const {default: App} = await server.ssrLoadModule('/src/App.jsx');
-    async function mount(query='?building=five&floor=1&lang=ru', { ready = true, intercept, holdBootstrap = false } = {}) {
+    async function mount(query='?building=five&floor=1&lang=ru', { ready = true, intercept, holdBootstrap = false, savedLanguage } = {}) {
       const {window,document} = parseHTML('<!doctype html><html><head><meta name="theme-color" content="#fff"></head><body><div id="root"></div></body></html>');
       const location = {search:query};
       const history = {entries:[query],replaceState(a,b,url){location.search=url;this.entries[this.entries.length-1]=url;},pushState(a,b,url){location.search=url;this.entries.push(url);}};
-      const stored = new Map();
+      const stored = new Map(savedLanguage?[['hdu-language',savedLanguage]]:[]);
       const raf = new Map(); let rafId=0, focused=null;
       const saved = new Map();
       const prototypeDescriptors = [
@@ -162,6 +162,14 @@ test('React application supports student search and route workflows', async t =>
       assert.equal(app.$('.route-line').getAttribute('points'),pathBefore);
       assert.equal(app.$('#routeTo').value,'305-кабинет');
       assert.equal(app.stored.get('hdu-language'),'kk');
+      await app.click('.language-switch button[lang="en"]');
+      assert.equal(app.document.documentElement.lang,'en');
+      assert.equal(app.$('.route-line').getAttribute('points'),pathBefore);
+      assert.equal(app.$('#routeTo').value,'Room 305');
+      assert.match(app.$('#routeSummary').textContent,/Route ready/);
+      assert.match(app.$('#routeSummary').textContent,/Go to the stairs and continue to floor 3/);
+      assert.equal(app.stored.get('hdu-language'),'en');
+      assert.match(app.location.search,/lang=en/);
     }));
 
     await t.test('corpus and floor controls preserve A 1–7 and B basement–5 mappings',()=>withApp(undefined,async app=>{
@@ -205,6 +213,24 @@ test('React application supports student search and route workflows', async t =>
       assert.equal(app.$('#planner').hidden,true);
       assert.doesNotMatch(app.location.search,/planner=/);
     }));
+
+    await t.test('English deep links and stored preference show translated floor names and search real English room names',async()=>{
+      const app=await mount('?building=five&floor=0&planner=1',{savedLanguage:'en'});
+      try{
+        assert.equal(app.document.documentElement.lang,'en');
+        assert.equal(app.document.title,'HDU — Campus map');
+        assert.equal(app.$('.map-heading h1').textContent,'Basement');
+        assert.equal(app.corpusButton('seven').textContent,'Building A');
+        assert.equal(app.corpusButton('five').textContent,'Building B');
+        assert.match(app.$('.planner-heading').textContent,/From → To/);
+        assert.match(app.location.search,/lang=en/);
+        await app.type('#search','library');
+        await app.waitFor(()=>[...app.document.querySelectorAll('#search-results [role="option"]')].some(option=>option.textContent.includes('Library')),'English library search');
+        await app.click([...app.document.querySelectorAll('#search-results [role="option"]')].find(option=>option.textContent.includes('Library')));
+        assert.match(app.$('#detail').textContent,/Library/);
+        assert.equal(app.document.documentElement.lang,'en');
+      }finally{await app.close();}
+    });
 
     await t.test('bootstrap failure shows a retry instead of silently using local map fixtures',async()=>{
       let failures=0;

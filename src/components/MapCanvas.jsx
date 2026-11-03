@@ -11,7 +11,7 @@ function ServiceIcon({ room, wide }) {
   </svg>;
 }
 
-const MapCanvas = forwardRef(function MapCanvas({ floorData, building, floor, selectedId, routePoints, roomName, roomLabel, t, onSelect, onZoomChange }, ref) {
+const MapCanvas = forwardRef(function MapCanvas({ floorData, building, floor, language = 'ru', selectedId, routePoints, roomName, roomLabel, t, onSelect, onZoomChange }, ref) {
   const canvasRef = useRef(null), drawingRef = useRef(null);
   const transform = useRef({ zoom: 1, x: 0, y: 0 });
   const callbacks = useRef({ onZoomChange }); callbacks.current = { onZoomChange };
@@ -116,7 +116,8 @@ const MapCanvas = forwardRef(function MapCanvas({ floorData, building, floor, se
       <svg viewBox={floorData.view.join(' ')} role="group" aria-label={`${t('mapAria')}, ${t(building)}, ${floor === 0 ? t('basement') : t('floor', { n: floor })}`}>
         {rooms.map(room => {
           const narrow = room.type === 'terrace' || (room.w && room.w < 55);
-          const title = room.number || (room.label === 'Помещение' ? t('roomShort') : room.label === 'Подсобное помещение' ? t('utilityShort') : roomLabel(room));
+          const customName = language==='en'?room.labelEn:language==='kk'?room.labelKk:room.labelRu;
+          const title = room.number || (!customName&&room.label === 'Помещение' ? t('roomShort') : !customName&&room.label === 'Подсобное помещение' ? t('utilityShort') : roomLabel(room));
           const baseSize = room.number ? (floorData.wide ? 19 : 17) : narrow ? 10 : title.length > 14 ? 10 : floorData.wide ? 13 : 12;
           const size = room.w ? Math.max(6, Math.min(baseSize, room.w * 1.55 / title.length)) : baseSize;
           const service = !room.number && (room.type === 'stair' || room.type === 'wc');

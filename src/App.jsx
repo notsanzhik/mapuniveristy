@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ROOM_KK, makeTranslator } from './i18n.js';
+import { LANGUAGE_OPTIONS, resolveLanguage, localizedRoomLabel, makeTranslator } from './i18n.js';
 import { buildCatalog, keyOf } from './map-core.js';
 import { loadMaps, createRoute } from './api-client.js';
 import useRoomSearch from './hooks/useRoomSearch.js';
@@ -14,7 +14,7 @@ export function readView(search, maps) {
   const params = new URLSearchParams(search);
   const building = Object.hasOwn(maps,params.get('building')) ? params.get('building') : 'seven';
   const wanted = Number(params.get('floor') ?? 1);
-  return { building, floor: Object.hasOwn(maps[building].floors,wanted) ? wanted : 1, language: ['ru','kk'].includes(params.get('lang')) ? params.get('lang') : storage.get('hdu-language') === 'kk' ? 'kk' : 'ru', planner: params.get('planner') === '1' };
+  return { building, floor: Object.hasOwn(maps[building].floors,wanted) ? wanted : 1, language: resolveLanguage(search,storage.get('hdu-language')), planner: params.get('planner') === '1' };
 }
 export function viewURL(view) {
   const params = new URLSearchParams({building:view.building,floor:String(view.floor),lang:view.language});
@@ -25,8 +25,8 @@ export function viewURL(view) {
 export default function App() {
   const [bootstrap,setBootstrap] = useState({maps:null,error:null,revision:null});
   const [attempt,setAttempt] = useState(0);
-  const language = new URLSearchParams(location.search).get('lang') || storage.get('hdu-language') || 'ru';
-  const t = makeTranslator(language==='kk'?'kk':'ru');
+  const language = resolveLanguage(location.search,storage.get('hdu-language'));
+  const t = makeTranslator(language);
   useEffect(()=>{
     let controller,closed=false;
     const refresh=()=>{
@@ -48,7 +48,7 @@ export default function App() {
     return()=>{closed=true;controller?.abort();window.removeEventListener('focus',refresh);window.removeEventListener('storage',onStorage);window.removeEventListener('hdu-map-updated',refresh);document.removeEventListener('visibilitychange',onVisible);};
   },[attempt]);
   useEffect(()=>{
-    document.documentElement.lang=language==='kk'?'kk':'ru';
+    document.documentElement.lang=language;
     document.title=t('title');
     document.body.classList.toggle('light',storage.get('hdu-theme-emerald-gold')!=='dark');
   },[language]);
@@ -87,7 +87,7 @@ export function CampusApp({maps,revision}) {
   useEffect(()=>()=>routeRequest.current.controller?.abort(),[]);
   const t = useMemo(()=>makeTranslator(view.language),[view.language]);
   const floorName = useCallback(f=>Number(f)===0 ? t('basement') : t('floor',{n:f}),[t]);
-  const roomLabel = useCallback(r=>view.language === 'kk' ? r.labelKk || ROOM_KK[r.label] || r.labelRu || r.label : r.labelRu || r.label,[view.language]);
+  const roomLabel = useCallback(r=>localizedRoomLabel(r,view.language),[view.language]);
   const roomName = useCallback(r=>r.number ? t('room',{n:r.number}) : roomLabel(r),[t,roomLabel]);
   const placeMeta = useCallback(r=>`${t(r.building)} · ${floorName(r.floor)}${r.number ? '' : ' · '+t('planId',{n:r.id})}`,[t,floorName]);
   const floorData = maps[view.building].floors[view.floor];
@@ -175,15 +175,15 @@ export function CampusApp({maps,revision}) {
   return <>
     <header className="app-header">
       <div className="topbar">
-        <a className="brand" href="./" aria-label={t('brandAria')}><span className="logo"><img src="/assets/hdu-logo.png" alt={t('logo')} width="44" height="44" /></span><span className="brand-copy"><b>ХДУ<span className="brand-dot" aria-hidden="true">.</span></b><small>{t('brand')}</small></span></a>
+        <a className="brand" href="./" aria-label={t('brandAria')}><span className="logo"><img src="/assets/hdu-logo.png" alt={t('logo')} width="44" height="44" /></span><span className="brand-copy"><b>{t('universityShort')}<span className="brand-dot" aria-hidden="true">.</span></b><small>{t('brand')}</small></span></a>
         <SearchPicker {...searchProps} id="search" placeholder={t('searchPlaceholder')} value={query} onChange={setQuery} results={search.results} loading={search.loading} onSelect={selectSearch} emptyText={searchState(search)||t('noResults')} onRetry={search.error?search.retry:undefined} />
-        <div className="header-actions"><div className="language-switch" role="group" aria-label={t('languages')}>{[['kk','ҚАЗ','Қазақша'],['ru','РУС','Русский']].map(([lang,label,aria])=><button key={lang} type="button" lang={lang} aria-label={aria} aria-pressed={view.language===lang} className={view.language===lang?'active':''} onClick={()=>navigate({language:lang})}>{label}</button>)}</div><button id="theme" className="icon-button" type="button" aria-label={t('theme')} title={t('theme')} onClick={()=>setTheme(theme==='light'?'dark':'light')}><Icon type={theme==='light'?'moon':'sun'} /></button><button id="about" className="icon-button" type="button" aria-label={t('about')} title={t('about')} onClick={()=>setAbout(true)}><Icon type="info" /></button></div>
+        <div className="header-actions"><div className="language-switch" role="group" aria-label={t('languages')}>{LANGUAGE_OPTIONS.map(([lang,label,aria])=><button key={lang} type="button" lang={lang} aria-label={aria} aria-pressed={view.language===lang} className={view.language===lang?'active':''} onClick={()=>navigate({language:lang})}>{label}</button>)}</div><button id="theme" className="icon-button" type="button" aria-label={t('theme')} title={t('theme')} onClick={()=>setTheme(theme==='light'?'dark':'light')}><Icon type={theme==='light'?'moon':'sun'} /></button><button id="about" className="icon-button" type="button" aria-label={t('about')} title={t('about')} onClick={()=>setAbout(true)}><Icon type="info" /></button></div>
       </div>
       <div className="map-toolbar"><nav id="buildings" aria-label={t('buildings')}>{['seven','five'].map(b=><button key={b} data-building={b} type="button" className={`corpus-button${view.building===b?' active':''}`} aria-pressed={view.building===b} onClick={()=>selectBuilding(b)}><span className="corpus-icon"><Icon type={b} /></span><b>{t(b)}</b><span className="corpus-active-dot" aria-hidden="true" /></button>)}</nav><span className="toolbar-divider" aria-hidden="true" /><div className="route-launcher"><button id="togglePlanner" type="button" className={route?'has-route':''} aria-expanded={view.planner} aria-controls="planner" onClick={()=>navigate({planner:!view.planner})}><Icon type="route" /><span>{t('route')}</span></button></div></div>
       <RoutePlanner open={view.planner} onClose={()=>{navigate({planner:false});requestAnimationFrame(()=>document.getElementById('togglePlanner')?.focus());}} points={points} texts={texts} results={endpointResults} searches={{from:fromSearch,to:toSearch}} busy={routing} onText={editEndpoint} onChoose={chooseEndpoint} onSwap={()=>{cancelRoute();const swapped={from:points.to,to:points.from};setPoints(swapped);setTexts({from:texts.to,to:texts.from});setMessage('');setRoute(null);if(route)void build(swapped);}} onBuild={()=>{void build();}} onClear={()=>{cancelRoute();setPoints({from:null,to:null});setTexts({from:'',to:''});setRoute(null);setMessage('');}} message={message} route={route} currentFloor={view.floor} onFloor={selectFloor} t={t} floorName={floorName} roomName={roomName} placeMeta={placeMeta} pointIcon={pointIcon} />
     </header>
     <main><section className="map-panel" aria-label={t('mapAria')}>
-      <MapCanvas ref={mapRef} floorData={floorData} building={view.building} floor={view.floor} selectedId={selected} routePoints={route?.building===view.building?route.segments[view.floor]:null} roomName={roomName} roomLabel={roomLabel} t={t} onSelect={handleRoomSelect} onZoomChange={setZoom} />
+      <MapCanvas ref={mapRef} language={view.language} floorData={floorData} building={view.building} floor={view.floor} selectedId={selected} routePoints={route?.building===view.building?route.segments[view.floor]:null} roomName={roomName} roomLabel={roomLabel} t={t} onSelect={handleRoomSelect} onZoomChange={setZoom} />
       <div className="map-heading"><span className="eyebrow">{t(view.building)} · {t('floorMap')}</span><h1>{floorName(view.floor)}</h1><p className="map-context-help">{t('mapHint')}</p></div>
       <div className="map-hint">{t('hint')}</div>
       <div className="floor-rail"><span className="floor-caption">{t('floorCaption')}</span><div id="floors" aria-label={t('floors')}>{Object.keys(maps[view.building].floors).map(Number).sort((a,b)=>b-a).map(f=><button key={f} type="button" className={f===view.floor?'active':''} aria-label={floorName(f)} aria-pressed={f===view.floor} onClick={()=>selectFloor(f)}>{f===0?t('basementShort'):f}</button>)}</div></div>

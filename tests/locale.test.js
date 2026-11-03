@@ -4,24 +4,26 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import maps from '../src/data.js';
-import { I18N, ROOM_KK, makeTranslator } from '../src/i18n.js';
+import { I18N, ROOM_KK, ROOM_EN, LANGUAGE_OPTIONS, SUPPORTED_LANGUAGES, resolveLanguage, localizedRoomLabel, makeTranslator } from '../src/i18n.js';
 import { buildCatalog, keyOf, searchRooms } from '../src/map-core.js';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const placeholders = text => [...text.matchAll(/\{(\w+)\}/g)].map(match => match[1]).sort();
 const catalog = buildCatalog(maps);
 
-test('Russian and Kazakh dictionaries have complete matching keys and placeholders', () => {
+test('Russian, Kazakh and English dictionaries have complete matching keys and placeholders', () => {
   const keys = Object.keys(I18N.ru).sort();
   assert.ok(keys.length >= 75);
   assert.deepEqual(Object.keys(I18N.kk).sort(), keys);
+  assert.deepEqual(Object.keys(I18N.en).sort(), keys);
   for (const key of keys) {
-    for (const language of ['ru', 'kk']) {
+    for (const language of SUPPORTED_LANGUAGES) {
       assert.equal(typeof I18N[language][key], 'string', `${language}/${key}`);
       assert.ok(I18N[language][key].trim(), `${language}/${key} is blank`);
       assert.ok(!I18N[language][key].includes('\uFFFD'), `${language}/${key} has broken encoding`);
     }
     assert.deepEqual(placeholders(I18N.ru[key]), placeholders(I18N.kk[key]), key);
+    assert.deepEqual(placeholders(I18N.ru[key]), placeholders(I18N.en[key]), key);
   }
 });
 
@@ -30,6 +32,7 @@ test('translator preserves leading zeroes, suffixes and numeric zero without mut
   for (const number of ['01А', '06Б', '117А', '211', '01A']) {
     assert.equal(makeTranslator('ru')('room', { n: number }), `Кабинет ${number}`);
     assert.equal(makeTranslator('kk')('room', { n: number }), `${number}-кабинет`);
+    assert.equal(makeTranslator('en')('room', { n: number }), `Room ${number}`);
   }
   assert.equal(makeTranslator('kk')('floor', { n: 0 }), '0-қабат');
   assert.equal(makeTranslator('bad')('from'), I18N.ru.from);
@@ -39,20 +42,21 @@ test('translator preserves leading zeroes, suffixes and numeric zero without mut
   assert.equal(JSON.stringify(I18N), snapshot);
 });
 
-test('all actual room types have Kazakh labels and search accepts either language', () => {
+test('all actual room types have Kazakh and English labels and search accepts all languages', () => {
   const labels = new Set(catalog.map(room => room.label));
-  for (const label of labels) assert.ok(ROOM_KK[label]?.trim(), label);
+  for (const label of labels) { assert.ok(ROOM_KK[label]?.trim(), label);assert.ok(ROOM_EN[label]?.trim(),label); }
   const search = query => searchRooms(query, { catalog, building: 'five', floor: 0 }).map(keyOf);
   for (const [russian, kazakh] of [['библиотека', 'кітапхана'], ['лестница', 'баспалдақ'], ['столовая', 'асхана']]) {
     assert.deepEqual(search(russian), search(kazakh), `${russian}/${kazakh}`);
     assert.ok(search(kazakh).length);
   }
+  for (const [russian,english] of [['библиотека','library'],['лестница','stairs'],['столовая','cafeteria']]) assert.deepEqual(search(russian),search(english));
   assert.equal(I18N.ru.five, 'Б корпус'); assert.equal(I18N.kk.five, 'Б корпусы');
   assert.equal(I18N.ru.seven, 'А корпус'); assert.equal(I18N.kk.seven, 'А корпусы');
   assert.equal(I18N.ru.basement, 'Подвал'); assert.equal(I18N.kk.basement, 'Жертөле');
 });
 
-test('every literal React UI translation reference resolves in both languages', () => {
+test('every literal React UI translation reference resolves in all three languages', () => {
   function filesIn(folder) {
     return fs.readdirSync(folder, { withFileTypes: true }).flatMap(entry => entry.isDirectory()
       ? filesIn(path.join(folder, entry.name)) : /\.[jt]sx?$/.test(entry.name) ? [path.join(folder, entry.name)] : []);
@@ -62,14 +66,14 @@ test('every literal React UI translation reference resolves in both languages', 
     for (const match of fs.readFileSync(file, 'utf8').matchAll(/\bt\(\s*['"]([^'"]+)['"]/g)) keys.add(match[1]);
   }
   assert.ok(keys.size > 0);
-  for (const key of keys) for (const language of ['ru', 'kk']) assert.ok(Object.hasOwn(I18N[language], key), `${language}/${key}`);
-  for (const language of ['ru', 'kk']) {
+  for (const key of keys) for (const language of SUPPORTED_LANGUAGES) assert.ok(Object.hasOwn(I18N[language], key), `${language}/${key}`);
+  for (const language of SUPPORTED_LANGUAGES) {
     assert.ok(!Object.hasOwn(I18N[language], 'source'));
     assert.ok(!Object.hasOwn(I18N[language], 'originalText'));
   }
 });
 
-test('bundled Montserrat contains real glyphs for every Russian and Kazakh letter', () => {
+test('bundled Montserrat contains real glyphs for every Russian, Kazakh and English letter', () => {
   const font = fs.readFileSync(path.join(root, 'public/assets/fonts/Montserrat-Variable.ttf'));
   const u16 = offset => font.readUInt16BE(offset), u32 = offset => font.readUInt32BE(offset);
   let cmap;
@@ -98,6 +102,18 @@ test('bundled Montserrat contains real glyphs for every Russian and Kazakh lette
     }
   }
   const uppercase = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯӘҒҚҢӨҰҮҺІ';
-  for (const ch of uppercase + uppercase.toLowerCase() + '0123456789') assert.ok(covered.has(ch.codePointAt(0)), `Missing glyph: ${ch}`);
+  for (const ch of uppercase + uppercase.toLowerCase() + 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') assert.ok(covered.has(ch.codePointAt(0)), `Missing glyph: ${ch}`);
   assert.match(fs.readFileSync(path.join(root, 'public/assets/fonts/Montserrat-OFL.txt'), 'utf8'), /SIL OPEN FONT LICENSE/);
+});
+
+test('English URL and stored preference resolve safely and room names use explicit translations',()=>{
+  assert.deepEqual(LANGUAGE_OPTIONS.map(([code,label])=>[code,label]),[['kk','ҚАЗ'],['ru','РУС'],['en','ENG']]);
+  assert.equal(resolveLanguage('?lang=en','kk'),'en');
+  assert.equal(resolveLanguage('?floor=0','en'),'en');
+  assert.equal(resolveLanguage('?lang=__proto__','en'),'en');
+  assert.equal(resolveLanguage('?lang=bad','bad'),'ru');
+  assert.equal(localizedRoomLabel({label:'Лестница'},'en'),'Staircase');
+  assert.equal(localizedRoomLabel({label:'Мой кабинет',labelRu:'Мой кабинет',labelEn:'Admissions office'},'en'),'Admissions office');
+  assert.equal(localizedRoomLabel({label:'Лаборатория',labelEn:''},'en'),'Laboratory');
+  assert.equal(localizedRoomLabel({label:'Мой кабинет'},'en'),'Мой кабинет');
 });

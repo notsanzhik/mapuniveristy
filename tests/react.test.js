@@ -32,7 +32,7 @@ test('React SearchPicker renders accessible controls and handles explicit select
     let chosen = null, changed = null;
     const props = {
       id:'search',value:'21',onChange(value){changed=value;},results:points,onSelect(point){chosen=point;},
-      t:makeTranslator('ru'),roomName:point=>`Кабинет ${point.number}`,placeMeta:()=> 'Б корпус · 2 этаж',
+      t:makeTranslator('ru'),roomName:point=>`Кабинет ${point.number}`,placeMeta:()=> 'А корпус · 2 этаж',
       icon:()=>React.createElement('span',null,'□'),
     };
     const fire = (target,type,extra={}) => {
@@ -43,8 +43,8 @@ test('React SearchPicker renders accessible controls and handles explicit select
     const render = async next => { await act(async()=>reactRoot.render(React.createElement(SearchPicker,next))); };
     await render(props);
 
-    await t.test('server markup supports both locales and labelled endpoint metadata', () => {
-      for (const language of ['ru','kk']) {
+    await t.test('server markup supports all three locales and labelled endpoint metadata', () => {
+      for (const language of ['ru','kk','en']) {
         const translate = makeTranslator(language);
         const markup = renderToStaticMarkup(React.createElement(SearchPicker,{
           ...props,id:'route-to',label:translate('to'),placeholder:translate('toPlaceholder'),

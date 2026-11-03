@@ -1,4 +1,4 @@
-import { ROOM_KK } from './i18n.js';
+import { ROOM_KK, ROOM_EN } from './i18n.js';
 
 export const normalize = value => String(value ?? '').toLowerCase().replaceAll('ё', 'е').replaceAll('a', 'а').replaceAll('b', 'б').trim();
 export const keyOf = room => `${room.building}:${room.floor}:${room.id}`;
@@ -7,19 +7,19 @@ export function buildCatalog(maps) {
   return Object.entries(maps).flatMap(([building, map]) => Object.entries(map.floors).flatMap(([floor, data]) => data.rooms.map(room => ({ ...room, building, floor: +floor }))));
 }
 
-// The same index serves both interface languages. Never infer a cabinet number
+// The same index serves all interface languages. Never infer a cabinet number
 // from its technical plan ID; leading zeroes and letter suffixes stay intact.
 export function searchRooms(query, { catalog = [], building, floor } = {}, routeOnly = false) {
-  const q = normalize(query);
+  const raw = String(query ?? '').toLowerCase().replaceAll('ё','е').trim();
   let list = catalog.filter(room => !routeOnly || !room.partial);
-  const corpus = q.match(/(?:^|\s)(?:([аб])\s*корпус(?:ы)?|корпус(?:ы)?\s*([аб]))(?=\s|$)/);
-  if (corpus) list = list.filter(room => room.building === ((corpus[1] || corpus[2]) === 'а' ? 'seven' : 'five'));
-  const basement = /подвал|жертөле/.test(q);
-  const floorMatch = q.match(/(\d+)\s*[- ]?(?:этаж|эт\.?|қабат)/);
+  const corpus = raw.match(/(?:^|[\s,])(?:([abаб])\s*(?:корпус(?:ы)?|building|block)|(?:корпус(?:ы)?|building|block)\s*([abаб]))(?=[\s,]|$)/);
+  if (corpus) list = list.filter(room => room.building === (normalize(corpus[1] || corpus[2]) === 'а' ? 'seven' : 'five'));
+  const basement = /подвал|жертөле|\bbasement\b/.test(raw);
+  const floorMatch = raw.match(/(\d+)\s*(?:[- ]?(?:этаж|эт\.?|қабат)|(?:st|nd|rd|th)?\s*floor\b)|\bfloor\s+(\d+)/u);
   if (basement) list = list.filter(room => room.floor === 0);
-  if (floorMatch) list = list.filter(room => room.floor === +floorMatch[1]);
-  const technical = /план|экспликац|жоспар/.test(q);
-  const term = q.replace(corpus?.[0] ?? /$^/, ' ').replace(floorMatch?.[0] ?? /$^/, ' ').replace(/подвал|жертөле/g, ' ').trim();
+  if (floorMatch) list = list.filter(room => room.floor === Number(floorMatch[1] || floorMatch[2]));
+  const technical = /план|экспликац|жоспар|\bplan\b|\bid\b/.test(raw);
+  const term = normalize(raw.replace(corpus?.[0] ?? /$^/, ' ').replace(floorMatch?.[0] ?? /$^/, ' ').replace(/подвал|жертөле|\bbasement\b/g, ' '));
   const nums = term.match(/\d+/g) || [];
   if (technical) {
     list = list.filter(room => nums.length > 1 ? room.floor === +nums[0] && room.id === +nums[1] : nums.length ? room.id === +nums[0] : false);
@@ -31,9 +31,11 @@ export function searchRooms(query, { catalog = [], building, floor } = {}, route
     const token = (term.match(/\d+[a-zа-яәғқңөұүһі]?/iu) || [])[0];
     list = list.filter(room => (room.number && normalize(room.number).startsWith(normalize(token))) || (!token.startsWith('0') && room.id === +nums[0]));
   } else {
-    const tokens = term.split(/[\s,]+/).filter(word => word && !/^(кабинет|каб|аудитория|бөлме)$/.test(word));
+    const generic = new Set(['кабинет','каб','аудитория','бөлме','room','classroom'].map(normalize));
+    const tokens = term.split(/[\s,]+/).filter(word => word && !generic.has(word));
     list = list.filter(room => {
-      const text = normalize(`${room.label} ${room.labelRu ?? ''} ${room.labelKk ?? ''} ${ROOM_KK[room.label] ?? ''} ${room.type === 'wc' ? 'туалет санузел әжетхана' : ''} ${room.number ?? ''}`);
+      const aliases=room.type==='wc'?'туалет санузел әжетхана toilet toilets restroom bathroom wc washroom':room.type==='stair'?'stairs staircase':room.label==='Столовая'?'cafeteria canteen dining':'';
+      const text = normalize(`${room.label} ${room.labelRu ?? ''} ${room.labelKk ?? ''} ${room.labelEn ?? ''} ${ROOM_KK[room.label] ?? ''} ${ROOM_EN[room.label] ?? ''} ${aliases} ${room.number ?? ''}`);
       return tokens.every(token => text.includes(token));
     });
   }

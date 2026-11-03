@@ -28,7 +28,7 @@ const invalidResponse = () => new ApiError('The server returned an invalid respo
 function validRoom(room) {
   if (!object(room) || !integer(room.id) || room.id < 1 || typeof room.label !== 'string' || !finite(room.cx) || !finite(room.cy)) return false;
   if (room.number !== undefined && room.number !== null && typeof room.number !== 'string') return false;
-  if (['labelRu', 'labelKk'].some(key => room[key] !== undefined && typeof room[key] !== 'string')) return false;
+  if (['labelRu', 'labelKk', 'labelEn'].some(key => room[key] !== undefined && typeof room[key] !== 'string')) return false;
   if (room.partial !== undefined && typeof room.partial !== 'boolean') return false;
   if (room.points !== undefined) return typeof room.points === 'string' && room.points.length > 0;
   return ['x', 'y', 'w', 'h'].every(key => finite(room[key])) && room.w > 0 && room.h > 0;

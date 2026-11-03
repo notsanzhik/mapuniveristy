@@ -9,9 +9,9 @@ const PASSWORD = 'Only-for-automated-tests-ӘҒҚ-2026';
 const POINT = { building: 'five', floor: 0, id: 2 };
 const endpoint = '/api/v1/admin/rooms/five/0/2';
 const historyEndpoint = '/api/v1/admin/history/five/0/2';
-const edited = { number: '01Ғ', labelRu: 'Лаборатория робототехники', labelKk: 'Робототехника зертханасы' };
+const edited = { number: '01Ғ', labelRu: 'Лаборатория робототехники', labelKk: 'Робототехника зертханасы', labelEn:'Robotics laboratory' };
 const roomAt = maps => maps.five.floors[0].rooms.find(room => room.id === 2);
-const geometry = room => Object.fromEntries(Object.entries(room).filter(([key]) => !['number', 'label', 'labelRu', 'labelKk'].includes(key)));
+const geometry = room => Object.fromEntries(Object.entries(room).filter(([key]) => !['number', 'label', 'labelRu', 'labelKk', 'labelEn'].includes(key)));
 const key = room => `${room.building}:${room.floor}:${room.id}`;
 
 async function start(databasePath) {
@@ -62,6 +62,7 @@ test('admin setup, room editing, public refresh and restart use one real HTTP/SQ
     const saved = await server.request(endpoint, { method: 'PATCH', ...auth, body: { ...edited, revision: originalRevision } });
     assert.equal(saved.payload.data.number, edited.number);
     assert.equal(saved.payload.data.labelRu, edited.labelRu); assert.equal(saved.payload.data.labelKk, edited.labelKk);
+    assert.equal(saved.payload.data.labelEn,edited.labelEn);
     assert.notEqual(saved.payload.revision, originalRevision);
     const savedRevision = saved.payload.revision;
     const refreshed = await server.request('/api/v1/maps', { headers: { 'If-None-Match': initialEtag } });
@@ -70,9 +71,10 @@ test('admin setup, room editing, public refresh and restart use one real HTTP/SQ
     const publicRoom = roomAt(refreshed.payload.data);
     assert.equal(publicRoom.number, edited.number); assert.equal(publicRoom.label, edited.labelRu);
     assert.equal(publicRoom.labelRu, edited.labelRu); assert.equal(publicRoom.labelKk, edited.labelKk);
+    assert.equal(publicRoom.labelEn,edited.labelEn);
     assert.deepEqual(geometry(publicRoom), geometry(original));
     assert.doesNotMatch(JSON.stringify(refreshed.payload), /"(?:area|source|sourcePage|sourceAsset|explanationPage|passwordHash|password_hash|csrfToken)"/);
-    for (const q of [edited.number, edited.labelRu, edited.labelKk]) {
+    for (const q of [edited.number, edited.labelRu, edited.labelKk, edited.labelEn]) {
       const search = await server.request('/api/v1/search?' + new URLSearchParams({ q }));
       assert.equal(search.payload.revision, savedRevision);
       assert.ok(search.payload.data.some(room => key(room) === key(POINT)), `Public search must find saved ${q}`);
@@ -84,7 +86,7 @@ test('admin setup, room editing, public refresh and restart use one real HTTP/SQ
 
     const history = await server.request(historyEndpoint, { cookie });
     assert.equal(history.payload.data.length, 1);
-    assert.deepEqual(history.payload.data[0].before, { number: '01А', labelRu: 'Лаборатория', labelKk: '' });
+    assert.deepEqual(history.payload.data[0].before, { number: '01А', labelRu: 'Лаборатория', labelKk: '', labelEn:'' });
     assert.deepEqual(history.payload.data[0].after, edited);
     assert.doesNotMatch(JSON.stringify(history.payload), /"(?:area|cx|cy|door|points|password_hash)"/);
     const stale = await server.request(endpoint, { method: 'PATCH', ...auth, body: { ...edited, labelRu: 'Stale value must not win', revision: originalRevision }, expected: 409 });

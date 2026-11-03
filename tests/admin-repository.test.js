@@ -182,6 +182,7 @@ test('invalid fields and missing rooms roll back without altering revisions or h
     const before = repository.getMaps(), revision = repository.getRevision();
     for (const invalid of [
       { number: 1 }, { number: 'a'.repeat(25) }, { labelRu: '' }, { labelRu: ' '.repeat(5) },
+      { labelEn:null },{ labelEn:'x'.repeat(121) },{labelEn:'<b>Untrusted</b>'},
       { labelRu: 'x'.repeat(121) }, { labelKk: 'x'.repeat(121) }, { labelKk: null },
       { labelRu: '<img onerror=alert(1)>' }, { number: '01\nA' }, { labelKk: 'Zero\u200bWidth' },
       { number: '<02>' }, { revision: 'not-a-revision' }, { floor: '0' }, { id: 1.5 },
@@ -192,4 +193,26 @@ test('invalid fields and missing rooms roll back without altering revisions or h
     assert.equal(repository.getRevision(), revision); assert.deepEqual(repository.getMaps(), before);
     assert.deepEqual(repository.getRoomHistory(point), []);
   } finally { repository.close(); }
+});
+
+test('English names persist with history and older clients preserve their value without migrating the database',t=>{
+  const filename=temporaryDatabase(t);
+  const repository=createMapRepository({filename});
+  const before=currentRoom(repository);
+  try{
+    repository.updateRoom(editable(repository,{labelEn:'Robotics laboratory'}));
+    assert.equal(currentRoom(repository).labelEn,'Robotics laboratory');
+    assert.equal(repository.getRoomHistory(point)[0].before.labelEn,'');
+    assert.equal(repository.getRoomHistory(point)[0].after.labelEn,'Robotics laboratory');
+    repository.updateRoom(editable(repository,{labelRu:'Обновлённая лаборатория'}));
+    assert.equal(currentRoom(repository).labelEn,'Robotics laboratory');
+    assert.equal(currentRoom(repository).number,before.number);
+    assert.deepEqual(currentRoom(repository).door,before.door);
+  }finally{repository.close();}
+  const reopened=createMapRepository({filename});
+  try{
+    assert.equal(currentRoom(reopened).labelEn,'Robotics laboratory');
+    reopened.updateRoom(editable(reopened,{labelEn:''}));
+    assert.equal(currentRoom(reopened).labelEn,'');
+  }finally{reopened.close();}
 });

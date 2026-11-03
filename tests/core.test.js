@@ -60,6 +60,19 @@ test('local context keeps the original search ranking', () => {
   assert.equal(search('211', false, 'five', 0)[0].number, '211');
 });
 
+test('English search supports building names, floor phrases, basement, services and custom translations',()=>{
+  for(const query of ['Building A floor 3 stairs','Building A, floor 3, stairs','A block 3rd floor stairs','3 floor stairs building A']){
+    const rooms=search(query);assert.ok(rooms.length,query);
+    assert.ok(rooms.every(room=>room.building==='seven'&&room.floor===3&&room.type==='stair'),query);
+  }
+  const basement=search('Building B basement room 01A');
+  assert.ok(basement.length);assert.ok(basement.every(room=>room.building==='five'&&room.floor===0&&room.number==='01А'));
+  for(const query of ['toilets','restroom','bathroom','wc']){const rooms=search(query);assert.ok(rooms.length);assert.ok(rooms.every(room=>room.type==='wc'));}
+  assert.deepEqual(search('library').map(keyOf),search('кітапхана').map(keyOf));
+  const room={...catalog[0],label:'Лаборатория робототехники',labelEn:'Robotics laboratory'};
+  assert.deepEqual(searchRooms('robotics',{catalog:[room]}),[room]);
+});
+
 test('121 existing staircase-to-room route connections retain their geometry', () => {
   const before = JSON.stringify(maps); let checks = 0;
   for (const [building, map] of Object.entries(maps)) {

@@ -204,11 +204,15 @@ export function createMapRepository({ filename = path.join(dataDirectory, 'hdu-m
           const record = roomQuery.get(building, floor, id);
           if (!record) throw storageError('NOT_FOUND', 'Room was not found.');
           const room = recordRoom(record), before = editableFields(room);
+          // JSON metadata needs no schema migration. Older clients retain the existing English name.
+          const english = input.labelEn === undefined ? room.labelEn ?? '' : textField(input.labelEn, { max: 120 });
+          if (Object.hasOwn(room,'labelEn') || english) { before.labelEn=room.labelEn??'';after.labelEn=english; }
           if (JSON.stringify(before) === JSON.stringify(after)) {
             db.exec('COMMIT'); return { room: { ...room, building, floor }, revision: currentRevision };
           }
           if (after.number && sameFloorNumbers.all(building, floor, id).some(candidate => numberKey(candidate.number) === numberKey(after.number))) throw storageError('DUPLICATE_NUMBER', 'Another room on this floor already has this cabinet number.');
           const changed = { ...room, label: after.labelRu, labelRu: after.labelRu, labelKk: after.labelKk };
+          if (Object.hasOwn(after,'labelEn')) changed.labelEn=after.labelEn;
           if (after.number) changed.number = after.number; else delete changed.number;
           update.run(after.number || null, JSON.stringify(changed), building, floor, id);
           const nextRevision = createHash('sha256').update(JSON.stringify(getMaps())).digest('hex');

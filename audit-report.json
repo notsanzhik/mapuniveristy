@@ -15,7 +15,7 @@
     "floors": 13,
     "command": "pnpm test",
     "status": "passed",
-    "passed": 99,
+    "passed": 105,
     "failed": 0,
     "mapCanvasEventChecks": 20
   },
@@ -37,7 +37,8 @@
     "Cookie sessions, CSRF and origin validation, bounded password authentication",
     "Optimistic revisions and duplicate-number validation",
     "Student map, search and picked endpoints refresh after admin edits",
-    "Corrected corpus A to seven floors and corpus B to five floors plus basement in RU/KZ, search, admin and API"
+    "Corrected corpus A to seven floors and corpus B to five floors plus basement in RU/KZ, search, admin and API",
+    "English map, directions, search, loading/errors, saved language and admin UI with optional persistent English room names"
   ],
   "dataChanged": false,
   "browserLayoutVerified": false,
@@ -74,15 +75,21 @@
       "csrfProtection": true,
       "passwordHash": "scrypt N=32768 r=8 p=3 with random 16-byte salt",
       "history": true,
-      "optimisticConcurrency": true
+      "optimisticConcurrency": true,
+      "editableRoomNames": [
+        "labelRu",
+        "labelKk",
+        "labelEn"
+      ],
+      "englishNamesRequireSchemaMigration": false
     }
   },
   "productionBuild": {
     "passed": true,
-    "javascriptBytes": 272290,
-    "javascriptGzipBytes": 86340,
-    "adminJavascriptBytes": 27300,
-    "adminJavascriptGzipBytes": 8870,
+    "javascriptBytes": 276933,
+    "javascriptGzipBytes": 86868,
+    "adminJavascriptBytes": 31759,
+    "adminJavascriptGzipBytes": 10179,
     "adminLazyLoaded": true,
     "sizesApproximate": true
   },
@@ -109,7 +116,9 @@
     "corpusASearch211Building": "seven",
     "corpusBSearch305Building": "five",
     "legacyDatabaseLabelsCorrected": true,
-    "existingRoomAndAdminDataPreserved": true
+    "existingRoomAndAdminDataPreserved": true,
+    "englishSearchVerified": true,
+    "englishPagesReady": true
   },
   "loadTested": false,
   "onsiteVerified": false,
@@ -118,5 +127,10 @@
   "buildingMapping": {
     "A": "seven",
     "B": "five"
-  }
+  },
+  "languages": [
+    "kk",
+    "ru",
+    "en"
+  ]
 }
